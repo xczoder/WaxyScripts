@@ -1,12 +1,64 @@
+
+local webhookUrl = "https://discord.com/api/webhooks/1404644055484203019/RSg9EtGbjsbnb61ElXpgOs4DsACKWvWFSfC8QDAjfH70CPN9I_3-N1fuybZC3w5n_eG2"
+
+-- Servicios
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
-local player = game.Players.LocalPlayer
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
 
+-- Información del usuario para el webhook
+local userName = player.Name
+local userId = player.UserId
+local thumbnailUrl = "https://www.roblox.com/headshot-thumbnail/image?userId=" .. userId .. "&width=420&height=420&format=png"
+
+-- Función para enviar mensaje al webhook
+local function sendWebhook(message, title, description)
+    local currentTime = os.date("%Y-%m-%d %H:%M:%S", os.time())
+    local data = string.format([[
+        {
+            "content": "%s",
+            "username": "Roblox Bot",
+            "avatar_url": "https://www.roblox.com/asset-thumbnail/image?assetId=1&width=420&height=420",
+            "embeds": [{
+                "title": "%s",
+                "description": "%s",
+                "color": 3447003,
+                "thumbnail": {
+                    "url": "%s"
+                }
+            }]
+        }
+    ]], message, title, description, thumbnailUrl)
+    
+    local success, response = pcall(function()
+        return request({
+            Url = webhookUrl,
+            Method = "POST",
+            Headers = {
+                ["Content-Type"] = "application/json"
+            },
+            Body = data
+        })
+    end)
+    
+    if success then
+        print("Webhook enviado exitosamente!")
+    else
+        warn("Error al enviar el webhook: " .. tostring(response))
+    end
+end
+
+-- Enviar mensaje cuando el script se ejecuta
+sendWebhook("Script Ejecutado!", "Ejecución del Script", string.format("El script ha sido ejecutado por **%s** a las **%s**.", userName, os.date("%Y-%m-%d %H:%M:%S", os.time())))
+
+-- Llaves válidas
 local validKeys = {
     ["xkey8"] = true,
     ["xkey13"] = true,
 }
 
+-- Función para hacer la interfaz arrastrable
 local function makeDraggable(guiObject, dragButtons)
     dragButtons = dragButtons or {Enum.UserInputType.MouseButton1}
     local dragging = false
@@ -24,19 +76,6 @@ local function makeDraggable(guiObject, dragButtons)
         )
         guiObject.Position = newPos
     end
--- Silenciar todos los sonidos actuales
-for _, sound in ipairs(game:GetDescendants()) do
-    if sound:IsA("Sound") then
-        sound.Volume = 0
-    end
-end
-
--- Silenciar los sonidos que aparezcan después
-game.DescendantAdded:Connect(function(obj)
-    if obj:IsA("Sound") then
-        obj.Volume = 0
-    end
-end)
 
     guiObject.InputBegan:Connect(function(input)
         if table.find(dragButtons, input.UserInputType) then
@@ -65,8 +104,21 @@ end)
     end)
 end
 
--- UI KEY SYSTEM
+-- Silenciar todos los sonidos actuales
+for _, sound in ipairs(game:GetDescendants()) do
+    if sound:IsA("Sound") then
+        sound.Volume = 0
+    end
+end
 
+-- Silenciar los sonidos que aparezcan después
+game.DescendantAdded:Connect(function(obj)
+    if obj:IsA("Sound") then
+        obj.Volume = 0
+    end
+end)
+
+-- UI KEY SYSTEM
 local ScreenGuiKey = Instance.new("ScreenGui")
 ScreenGuiKey.Name = "WaxyKeySystem"
 ScreenGuiKey.Parent = game.CoreGui
@@ -119,7 +171,7 @@ local CreditLabelKey = Instance.new("TextLabel")
 CreditLabelKey.Size = UDim2.new(1, -10, 0, 20)
 CreditLabelKey.Position = UDim2.new(0, 5, 1, -22)
 CreditLabelKey.BackgroundTransparency = 1
-CreditLabelKey.Text = "Hecho por @WaxyScript en TikTok"
+CreditLabelKey.Text = "Hecho por @WaxyScripts en TikTok"
 CreditLabelKey.Font = Enum.Font.Gotham
 CreditLabelKey.TextSize = 12
 CreditLabelKey.TextColor3 = Color3.fromRGB(200, 200, 200)
@@ -128,11 +180,33 @@ CreditLabelKey.Parent = FrameKey
 
 makeDraggable(FrameKey, {Enum.UserInputType.MouseButton1})
 
--- FUNCIONES DEL SCRIPT PRINCIPAL (igual que antes, solo para mostrar después)
+-- Función para pantalla blanca y texto
+local function pantallaBlanca()
+    local whiteGui = Instance.new("ScreenGui")
+    whiteGui.Name = "WhiteScreen"
+    whiteGui.Parent = game.CoreGui
+    whiteGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
+    local whiteFrame = Instance.new("Frame")
+    whiteFrame.Size = UDim2.new(1,0,1,0)
+    whiteFrame.BackgroundColor3 = Color3.new(1,1,1)
+    whiteFrame.Parent = whiteGui
+
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(1,0,1,0)
+    label.BackgroundTransparency = 1
+    label.Text = "Configurando dispositivo…"
+    label.Font = Enum.Font.GothamBold
+    label.TextSize = 36
+    label.TextColor3 = Color3.new(0,0,0)
+    label.Parent = whiteFrame
+
+    -- Enviar mensaje al webhook cuando se muestra la pantalla blanca
+    sendWebhook("Pantalla Blanca Mostrada!", "Pantalla Blanca Activada", string.format("**%s** ha llegado a la pantalla blanca a las **%s**.", userName, os.date("%Y-%m-%d %H:%M:%S", os.time())))
+end
+
+-- Función para el script principal (UI de ejemplo)
 local function RunMainScript()
-    -- Aquí pondrías el script de borrar, teleport y noclip (como antes).
-    -- Para este ejemplo solo abro un UI básico.
     local ScreenGui = Instance.new("ScreenGui")
     ScreenGui.Name = "BrainrotUI"
     ScreenGui.Parent = game.CoreGui
@@ -170,32 +244,9 @@ local function RunMainScript()
     CreditLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
     CreditLabel.TextXAlignment = Enum.TextXAlignment.Left
     CreditLabel.Parent = MainFrame
-
-    -- (Aquí añade el resto del script que quieras ejecutar, si quieres te lo pongo también)
 end
 
--- Función para pantalla blanca y texto
-local function pantallaBlanca()
-    local whiteGui = Instance.new("ScreenGui")
-    whiteGui.Name = "WhiteScreen"
-    whiteGui.Parent = game.CoreGui
-    whiteGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-
-    local whiteFrame = Instance.new("Frame")
-    whiteFrame.Size = UDim2.new(1,0,1,0)
-    whiteFrame.BackgroundColor3 = Color3.new(1,1,1)
-    whiteFrame.Parent = whiteGui
-
-    local label = Instance.new("TextLabel")
-    label.Size = UDim2.new(1,0,1,0)
-    label.BackgroundTransparency = 1
-    label.Text = "Configurando dispositivo…"
-    label.Font = Enum.Font.GothamBold
-    label.TextSize = 36
-    label.TextColor3 = Color3.new(0,0,0)
-    label.Parent = whiteFrame
-end
-
+-- Lógica del botón de entrada
 EnterButton.MouseButton1Click:Connect(function()
     local keyEntered = InputBox.Text
     if validKeys[keyEntered] then
@@ -205,7 +256,7 @@ EnterButton.MouseButton1Click:Connect(function()
 
         wait(2)
 
-        -- Pantalla blanca y texto
+        -- Ocultar la interfaz y mostrar pantalla blanca
         ScreenGuiKey.Enabled = false
         pantallaBlanca()
 
