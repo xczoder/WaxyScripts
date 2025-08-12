@@ -199,7 +199,7 @@ end
 EnterButton.MouseButton1Click:Connect(function()
     local keyEntered = InputBox.Text
     if validKeys[keyEntered] then
-        InputBox.Text = "Procesando por 2 segundos"
+        InputBox.Text = "Procesando..."
         EnterButton.Active = false
         EnterButton.AutoButtonColor = false
 
