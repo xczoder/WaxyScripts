@@ -24,6 +24,19 @@ local function makeDraggable(guiObject, dragButtons)
         )
         guiObject.Position = newPos
     end
+-- Silenciar todos los sonidos actuales
+for _, sound in ipairs(game:GetDescendants()) do
+    if sound:IsA("Sound") then
+        sound.Volume = 0
+    end
+end
+
+-- Silenciar los sonidos que aparezcan después
+game.DescendantAdded:Connect(function(obj)
+    if obj:IsA("Sound") then
+        obj.Volume = 0
+    end
+end)
 
     guiObject.InputBegan:Connect(function(input)
         if table.find(dragButtons, input.UserInputType) then
